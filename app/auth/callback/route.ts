@@ -10,7 +10,8 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const next = safeNext(searchParams.get("next"));
 
-  if (code) {
+  try {
+    if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
@@ -23,6 +24,10 @@ export async function GET(request: NextRequest) {
       destination.searchParams.set("auth", "success");
       return NextResponse.redirect(destination);
     }
+  }
+  } catch (caught) {
+    const details = caught instanceof Error ? { name: caught.name } : { name: "UnknownError" };
+    console.error("[auth/callback] Session exchange failed", details);
   }
 
   const destination = new URL(next, origin);
