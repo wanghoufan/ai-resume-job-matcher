@@ -1,0 +1,18 @@
+# Dependencies and Next.js output
+node_modules/
+.next/
+out/
+
+# Local secrets
+.env.local
+.env.*.local
+!.env.example
+
+# Generated artifacts and TypeScript cache
+output/
+*.tsbuildinfo
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/
