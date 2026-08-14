@@ -1,0 +1,24 @@
+.model-tabs > span {
+  padding: 17px 23px;
+  color: white;
+  background: rgba(64, 142, 255, .1);
+  box-shadow: inset 0 -2px var(--cyan);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.custom-fields select {
+  height: 37px;
+  padding: 0 10px;
+  color: white;
+  background: rgba(3, 12, 32, .6);
+  border: 1px solid rgba(134, 178, 236, .25);
+  border-radius: 7px;
+  outline: none;
+  font: inherit;
+  font-size: 12px;
+}
+
+.custom-fields select:focus { border-color: var(--cyan); }
+.custom-fields select option { color: #06122b; background: white; }
+.custom-fields p { overflow-wrap: anywhere; }

@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
-type Provider = "deepseek" | "custom";
+type Provider = "deepseek" | "qwen" | "kimi" | "doubao";
 type RadarSkill = { name: string; score: number };
 type InterviewQuestion = { question: string; referenceAnswer: string };
 type AnalysisResult = {
@@ -19,7 +19,7 @@ type HistoryItem = {
   id: string;
   createdAt: string;
   jobSummary: string;
-  provider: Provider;
+  provider: string;
   result: AnalysisResult;
 };
 
@@ -43,6 +43,17 @@ const defaultRadar: RadarSkill[] = [
   { name: "专业技能", score: 84 }, { name: "项目经验", score: 76 }, { name: "沟通协作", score: 79 },
   { name: "行业理解", score: 71 }, { name: "问题解决", score: 81 }, { name: "岗位契合度", score: 74 },
 ];
+
+const providerOptions: Array<{ id: Provider; label: string; defaultModel: string; endpoint: string }> = [
+  { id: "deepseek", label: "DeepSeek", defaultModel: "deepseek-v4-flash", endpoint: "https://api.deepseek.com/chat/completions" },
+  { id: "qwen", label: "通义千问", defaultModel: "qwen3.7-plus", endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions" },
+  { id: "kimi", label: "Kimi", defaultModel: "kimi-k2.5", endpoint: "https://api.moonshot.cn/v1/chat/completions" },
+  { id: "doubao", label: "豆包", defaultModel: "doubao-seed-2-0-lite-260215", endpoint: "https://ark.cn-beijing.volces.com/api/v3/chat/completions" },
+];
+
+function providerLabel(provider: string) {
+  return providerOptions.find((option) => option.id === provider)?.label || "自定义模型";
+}
 
 function withAuthTimeout<T>(request: Promise<T>, timeoutMs = 12_000) {
   return new Promise<T>((resolve, reject) => {
@@ -136,10 +147,8 @@ export default function Home() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState("");
   const [provider, setProvider] = useState<Provider>("deepseek");
-  const [endpoint, setEndpoint] = useState("");
-  const [model, setModel] = useState("");
+  const [model, setModel] = useState("deepseek-v4-flash");
   const [apiKey, setApiKey] = useState("");
-  const [customOpen, setCustomOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -168,7 +177,7 @@ export default function Home() {
         id: item.id,
         createdAt: new Date(item.created_at).toLocaleString("zh-CN", { hour12: false }),
         jobSummary: content?.slice(0, 48) || "已保存的岗位分析",
-        provider: item.provider === "custom" ? "custom" : "deepseek",
+        provider: typeof item.provider === "string" ? item.provider : "deepseek",
         result: item.result_json,
       }];
     });
@@ -247,17 +256,14 @@ export default function Home() {
     if (!resumeText) return setError("请先上传并解析包含文字的简历 PDF。");
     if (!resumeFile) return setError("简历文件已失效，请重新上传后再试。");
     if (!jobDescription.trim()) return setError("请粘贴目标岗位描述。");
-    if (provider === "custom") {
-      try { const url = new URL(endpoint); if (!/^https?:$/.test(url.protocol)) throw new Error("url"); } catch { return setError("请输入有效的 HTTP/HTTPS API 请求地址。"); }
-      if (!model.trim() || !apiKey.trim()) return setError("请完整填写请求地址、模型名称和 API Key。");
-    }
+    if (!model.trim() || !apiKey.trim()) return setError("请选择厂商，并填写模型名称和 API Key。");
     setLoading(true); setMessageIndex(0);
     try {
       const resumeId = crypto.randomUUID();
       const filePath = `${user.id}/${resumeId}/original.pdf`;
       const { error: uploadError } = await supabase.storage.from("resumes").upload(filePath, resumeFile, { contentType: "application/pdf", upsert: false });
       if (uploadError) throw new Error("简历上传失败，请检查登录状态后重试。");
-      const response = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ resumeText, jobDescription, provider, endpoint, model, apiKey, resumeId, filePath, fileName: resumeFile.name, fileSizeBytes: resumeFile.size }) });
+      const response = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ resumeText, jobDescription, provider, model, apiKey, resumeId, filePath, fileName: resumeFile.name, fileSizeBytes: resumeFile.size }) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "生成失败，请稍后重试。");
       const generated = payload.result as AnalysisResult;
@@ -326,13 +332,13 @@ export default function Home() {
     <section className="workbench" id="workbench"><div className="section-title"><span>输入材料</span><p>你的经验是起点，目标岗位决定方向。</p></div><form onSubmit={handleSubmit} className="input-grid">
       <label className={`upload-box ${fileName ? "uploaded" : ""}`}><input type="file" accept="application/pdf" onChange={handleFile}/><span className="upload-icon">↗</span><span>{fileName || "投放你的简历 PDF"}</span><small>{fileName ? "文本已提取，准备就绪" : "仅支持可提取文字的 PDF"}</small></label>
       <label className="field job-field"><span>目标岗位描述</span><textarea value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} placeholder="粘贴职位描述、工作职责与任职要求…"/></label>
-      <div className="model-card"><div className="model-tabs"><button type="button" className={provider === "deepseek" ? "active" : ""} onClick={() => setProvider("deepseek")}>DeepSeek <small>默认</small></button><button type="button" className={provider === "custom" ? "active" : ""} onClick={() => { setProvider("custom"); setCustomOpen(true); }}>自定义模型</button></div>{provider === "deepseek" ? <p className="model-note">使用服务端配置的 DeepSeek。密钥永不进入浏览器。</p> : <div className="custom-fields"><label><span>请求地址</span><input type="url" value={endpoint} onChange={(e) => setEndpoint(e.target.value)} placeholder="https://api.example.com/v1/chat/completions"/></label><label><span>模型名称</span><input value={model} onChange={(e) => setModel(e.target.value)} placeholder="例如 gpt-4o-mini"/></label><label><span>API Key</span><input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="仅用于本次请求" autoComplete="off"/></label><p>兼容 OpenAI Chat Completions 协议；凭据不会保存。</p></div>}</div>
+      <div className="model-card"><div className="model-tabs"><span>自带模型密钥（BYOK）</span></div><div className="custom-fields"><label><span>模型厂商</span><select value={provider} onChange={(event) => { const next = event.target.value as Provider; const option = providerOptions.find((item) => item.id === next); setProvider(next); setModel(option?.defaultModel || ""); }} aria-label="模型厂商">{providerOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label><label><span>模型名称</span><input value={model} onChange={(event) => setModel(event.target.value)} placeholder="请填写你账户可用的模型名称"/></label><label><span>API Key</span><input type="password" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="仅用于本次请求" autoComplete="off"/></label><p>固定使用 {providerOptions.find((option) => option.id === provider)?.endpoint}；密钥仅用于本次请求，不保存、不写入日志。</p></div></div>
       {error && <p className="form-error" role="alert">{error}</p>}
       <button className="submit" disabled={loading || !user} type="submit">{loading ? "正在分析" : user ? "开始 AI 分析" : "登录后开始分析"}<span>{loading ? "···" : "→"}</span></button>
     </form></section>
     {loading && <section className="loading-state"><div className="pulse"><i/><i/><i/></div><p className="eyebrow">RESEARCHING YOUR TRAJECTORY</p><h2>AI 正在研究中…</h2><p>{currentMessage}</p></section>}
     {result && <ResultView result={result}/>}
-    <section className="history"><div className="section-title"><span>历史分析记录</span><p>{user ? "登录后会自动保留并加载最近 30 条分析记录。" : "登录后即可永久保存简历、岗位材料与分析结果。"}</p></div>{history.length === 0 ? <div className="history-empty">{user ? <>尚未生成分析。<br/>从你的第一份目标岗位开始。</> : <>请先登录。<br/>你的历史分析会安全保存在个人账户中。</>}</div> : <div className="history-list">{history.map((item) => <button key={item.id} onClick={() => { setResult(item.result); window.setTimeout(() => document.querySelector("#analysis-result")?.scrollIntoView({ behavior: "smooth" }), 20); }}><span>{item.provider === "deepseek" ? "DEEPSEEK" : "CUSTOM"}</span><strong>{item.jobSummary}{item.jobSummary.length >= 48 ? "…" : ""}</strong><small>{item.createdAt} · 匹配度 {item.result.matchScore}</small><i>↗</i></button>)}</div>}</section>
+    <section className="history"><div className="section-title"><span>历史分析记录</span><p>{user ? "登录后会自动保留并加载最近 30 条分析记录。" : "登录后即可永久保存简历、岗位材料与分析结果。"}</p></div>{history.length === 0 ? <div className="history-empty">{user ? <>尚未生成分析。<br/>从你的第一份目标岗位开始。</> : <>请先登录。<br/>你的历史分析会安全保存在个人账户中。</>}</div> : <div className="history-list">{history.map((item) => <button key={item.id} onClick={() => { setResult(item.result); window.setTimeout(() => document.querySelector("#analysis-result")?.scrollIntoView({ behavior: "smooth" }), 20); }}><span>{providerLabel(item.provider).toUpperCase()}</span><strong>{item.jobSummary}{item.jobSummary.length >= 48 ? "…" : ""}</strong><small>{item.createdAt} · 匹配度 {item.result.matchScore}</small><i>↗</i></button>)}</div>}</section>
     <footer><span>AI 简历岗位匹配助手</span><p>让准备有方向，让机会看得见。</p></footer>
   </main>;
 }

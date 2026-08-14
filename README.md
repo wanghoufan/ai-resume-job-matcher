@@ -10,7 +10,7 @@ AI 简历岗位匹配助手是一款面向求职准备的工具：上传可提�
 - 岗位匹配度、优势/差距分析和可执行的简历优化建议
 - 定制求职信、10 个面试问题及参考回答、六维能力雷达图
 - Supabase 登录、私有简历存储与最近 30 条历史分析记录
-- 默认服务端 DeepSeek 模式；自定义 OpenAI Chat Completions 兼容模型模式
+- 纯 BYOK：用户临时输入自己的 API Key，支持 DeepSeek、通义千问、Kimi、豆包
 - 邮箱魔法链接与 Google OAuth 登录入口
 
 ## 技术栈
@@ -37,23 +37,26 @@ npm run dev
 在 `.env.local` 中配置：
 
 ```dotenv
-DEEPSEEK_API_KEY=your_deepseek_api_key
-DEEPSEEK_BASE_URL=https://api.deepseek.com
-DEEPSEEK_MODEL=deepseek-chat
-
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key
 ```
 
-绝不把 `service_role`、DeepSeek Key 或其他服务端密钥写入 `NEXT_PUBLIC_` 环境变量或提交到仓库。
+绝不把 `service_role` 或任何用户的 API Key 写入 `NEXT_PUBLIC_` 环境变量或提交到仓库。
 
 ## 登录配置
 
 邮箱登录由 Supabase Auth 提供。Google 登录需要在 Google Cloud 与 Supabase Dashboard 中启用 Provider 并设置回调地址，完整步骤见 [SUPABASE_AUTH_SETUP.md](SUPABASE_AUTH_SETUP.md)。
 
-## 自定义模型与安全
+## BYOK 模型与安全
 
-自定义模型模式用于用户自带 API Key（BYOK）。该 Key 仅用于当前请求，不应保存到数据库、Cookie、本地存储或日志中。用于公开部署前，建议将“请求地址”收敛为受支持厂商的固定地址或严格域名白名单，并限制仅 HTTPS，以降低任意 URL 后端转发带来的 SSRF 风险。
+本项目不提供或保存平台模型密钥。用户每次分析时自行选择厂商、输入模型名称和 API Key；Key 仅在本次服务端转发请求中使用，不保存到数据库、Cookie、本地存储或日志中。
+
+服务端只允许以下固定官方接口，不接受用户自定义 URL：
+
+- DeepSeek：`https://api.deepseek.com/chat/completions`
+- 通义千问：`https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions`
+- Kimi：`https://api.moonshot.cn/v1/chat/completions`
+- 豆包：`https://ark.cn-beijing.volces.com/api/v3/chat/completions`
 
 ## 常用命令
 

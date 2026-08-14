@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./byok.css";
 
 export const metadata: Metadata = {
   title: "AI 简历岗位匹配助手",
