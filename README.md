@@ -84,8 +84,8 @@ npx tsc --noEmit  # 仅执行 TypeScript 检查
 
 截至 2026-08-20：
 
-- Vercel 生产项目已存在，当前线上版本仍是岗位匹配 1.0。
-- 在线简历 2.0 已在本地实现；相关 Supabase 迁移已应用到远程数据库，但代码尚未提交、推送和部署。
-- 当前发布状态是 `locally verified / pending push`，不能把本地 `/r/{slug}` 当作已经上线的公网链接。
-- 正式发布前仍需完成：构建门禁、选择性提交与推送、Vercel 部署、登录态生成 → 编辑 → 发布 → 未登录访问 → 取消发布的生产回归。
+- 在线简历 2.0 已通过 PR #1 合并到 `main`，相关 Supabase 迁移已应用到远程数据库。
+- Vercel Production 部署状态为 Ready；正式入口为 <https://ai-resume-job-matcher-eta.vercel.app/resume-sites/new>。
+- 公网冒烟已验证：首页和创建页返回 200，未登录私有 API 返回 401；未启用的示例 slug 返回 404。
+- 当前发布状态是 `deployed / partial live verified`。仍需完成登录态生成 → 编辑 → 发布 → 未登录访问 → 更新发布 → 取消发布的生产回归。
 - 正式产品仍需补充速率限制、隐私告知、Google OAuth/邮件发送配置复核和完整 RLS/Storage 安全审查。
