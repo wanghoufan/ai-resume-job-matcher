@@ -18,3 +18,7 @@ output/
 .vscode/
 .vercel/
 .netlify/
+
+# Local agent and temporary working state
+.workbuddy/
+scratch/
