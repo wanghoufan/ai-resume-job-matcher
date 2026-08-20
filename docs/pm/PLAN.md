@@ -97,11 +97,11 @@
 
 | 层级 | 当前状态 | 证据/下一步 |
 |---|---|---|
-| 本地代码 | 已实现，待最终门禁 | 在线简历路由、编辑器、四主题和发布接口存在 |
+| 本地代码 | 已验证 | 类型检查、生产构建和 390px 创建页通过 |
 | Supabase schema | 已应用远程 | 两条在线简历迁移本地/远程一致 |
-| GitHub `main` | 尚未包含 2.0 | 当前 HEAD 与 `origin/main` 相同，本地存在未提交改动 |
-| Vercel 生产 | 1.0 Ready | 现役部署尚未包含 `/resume-sites` 与 `/r/{slug}` |
-| 生产验收 | pending | 推送部署后执行完整匿名发布生命周期回归 |
+| GitHub `main` | 已包含 2.0 | PR #1 已合并，merge commit `2bd2669` |
+| Vercel 生产 | Ready | `/` 与 `/resume-sites/new` 返回 200，未登录私有 API 返回 401 |
+| 生产验收 | partial live verified | 已完成匿名冒烟；已登录生成、发布、更新与取消发布仍为 pending |
 
 ## 8. MVP 验收标准
 
