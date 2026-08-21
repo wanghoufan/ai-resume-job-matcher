@@ -41,6 +41,8 @@ export async function GET() {
   const periodEnd = currentPeriodEnd ? new Date(currentPeriodEnd) : null;
   const statusAllowsAccess = status === "active" || status === "trialing";
   const isActive = statusAllowsAccess && (!periodEnd || periodEnd.getTime() > Date.now());
+  const analysisLimit = plan?.analysis_limit ?? 0;
+  const analysisUsed = usage?.analysis_used ?? 0;
 
   return NextResponse.json({
     subscription: {
@@ -54,9 +56,9 @@ export async function GET() {
       updatedAt,
     },
     quota: {
-      analysisLimit: usage?.analysis_limit ?? plan?.analysis_limit ?? 0,
-      analysisUsed: usage?.analysis_used ?? 0,
-      remaining: Math.max((usage?.analysis_limit ?? plan?.analysis_limit ?? 0) - (usage?.analysis_used ?? 0), 0),
+      analysisLimit,
+      analysisUsed,
+      remaining: Math.max(analysisLimit - analysisUsed, 0),
       periodStart: usage?.period_start ?? null,
       periodEnd: usage?.period_end ?? null,
     },
