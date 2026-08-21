@@ -1,15 +1,15 @@
-# AGENTS.md — AI 简历岗位匹配助手
+# AGENTS.md — AI 超级求职助手
 
 > 本文件是项目总入口：公共规则、角色索引与文档路由。各角色长规则在 `docs/roles/`，当前计划/回归/审查/交接分别在 `docs/pm`、`docs/qa`、`docs/review`、`docs/handoff`。
 
 ## 一、项目档案
 
-- 项目名称：AI 简历岗位匹配助手
+- 项目名称：AI 超级求职助手（2026-08-21 用户定案的对外统一名称，原「AI 简历岗位匹配助手」）
 - 项目类型：网页端 AI 工具（Next.js App Router 多路由应用）
-- 当前阶段：课程作业 / 原型；在线简历 2.0 已合并到 `main` 并部署至 Vercel Production，待完成已登录发布生命周期验收
+- 当前阶段：课程作业 / 原型；在线简历 2.0 已合并到 `main` 并部署至 Vercel Production，待完成已登录发布生命周期验收；会员与支付功能开发中（收银台 / webhook / `/pricing` 已合并 `main`，状态接口与额度预留仍在本地未提交）
 - 主要目标：提供岗位匹配分析，以及可编辑、换主题、发布分享的 HTML 在线简历主页
 - 主要用户：求职者
-- 当前待办：验证已登录生成、编辑、发布、匿名访问与取消发布；正式产品仍需速率限制、隐私告知和认证配置复核（详见 `README.md`「当前状态」）
+- 当前待办：验证已登录生成、编辑、发布、匿名访问与取消发布；验证会员订阅生命周期（webhook → 订阅状态 → 分析额度预留/退回）与存量/取消订阅用户降级表现（详见 `docs/qa/BUGS.md`）；正式产品仍需速率限制、隐私告知和认证配置复核（详见 `README.md`「当前状态」）
 
 ### 技术栈
 
@@ -38,6 +38,9 @@
 - `app/api/analyze/route.ts`：服务端代理，落库 `resumes`/`job_descriptions`/`analyses`，不保存用户密钥。
 - `app/resume-sites/`：在线简历列表、创建和编辑器；`app/r/[slug]/` 为无需登录的公开页。
 - `app/api/resume-sites/`：来源读取、AI 生成、草稿保存、发布与取消发布。
+- `app/pricing/`：会员方案页（`/pricing`）；`app/api/payments/waffo/checkout` 发起订阅收银台，`app/api/webhooks/waffo` 接收并校验 webhook 签名。
+- `app/api/membership/route.ts`：读取本人订阅状态与当期额度（仅本人，未登录 401）；分析额度预留逻辑见 `app/api/analyze/route.ts`。
+- `lib/waffo/config.ts`：Waffo Pancake 测试环境套餐与店铺配置（仅测试环境，非生产计费）。
 - `components/resume-sites/ResumeRenderer.tsx`：编辑预览和公开页共用的四主题渲染器。
 - `lib/resume-sites/`：结构化内容校验、公开字段过滤、AI 生成适配。
 - `lib/supabase/{client,server,proxy}.ts`：浏览器 / 服务端客户端与会话刷新。

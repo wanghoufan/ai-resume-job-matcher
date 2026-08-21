@@ -103,7 +103,18 @@ export async function POST(request: Request) {
   const apiKey = body.apiKey?.trim();
   if (!model || !apiKey) return error("请完整填写模型名称和 API Key。");
 
+  const { data: quotaRows, error: quotaError } = await supabase.rpc("reserve_analysis_quota");
+  if (quotaError) {
+    console.error("[api/analyze] Quota reservation failed", quotaError.code || "UnknownQuotaError");
+    return error("暂时无法确认会员额度，请稍后重试。", 503);
+  }
+  const quota = Array.isArray(quotaRows) ? quotaRows[0] : quotaRows;
+  if (!quota?.allowed || typeof quota.usage_period_id !== "string") {
+    return error("本期 AI 分析额度已用完，请升级套餐或下个周期再试。", 429);
+  }
+  const usagePeriodId = quota.usage_period_id as string;
   let analysisId: string | undefined;
+  let completed = false;
   try {
     const { error: resumeError } = await supabase.from("resumes").insert({ id: resumeId, user_id: userId, title: fileName.replace(/\.pdf$/i, "").slice(0, 120), file_path: filePath, file_name: fileName.slice(0, 255), file_size_bytes: Math.floor(fileSizeBytes), extracted_text: resumeText, is_active: false });
     if (resumeError) throw new RequestError("无法保存简历，请重新上传后重试。", 500);
@@ -124,11 +135,19 @@ export async function POST(request: Request) {
     if (!isValidResult(result)) throw new RequestError("模型返回的结果格式异常，请重试或更换模型。", 422);
     const { error: updateError } = await supabase.from("analyses").update({ status: "completed", match_score: result.matchScore, result_json: result, provider_request_id: payload.id || null, latency_ms: Date.now() - startedAt, completed_at: new Date().toISOString() }).eq("id", analysisId);
     if (updateError) throw new RequestError("分析已完成但保存结果失败，请重试。", 500);
-    return NextResponse.json({ result, analysis: { id: analysisId, createdAt: new Date().toISOString(), jobSummary: jobDescription.slice(0, 48), provider } });
+    const { error: usageEventError } = await supabase.from("usage_events").insert({ user_id: userId, analysis_id: analysisId, event_type: "analysis", model, status: "succeeded" });
+    if (usageEventError) console.error("[api/analyze] Usage event persistence failed", usageEventError.code);
+    completed = true;
+    return NextResponse.json({ result, analysis: { id: analysisId, createdAt: new Date().toISOString(), jobSummary: jobDescription.slice(0, 48), provider }, quota: { remaining: quota.remaining } });
   } catch (caught) {
     if (analysisId) await supabase.from("analyses").update({ status: "failed", error_message: caught instanceof RequestError ? caught.message : "模型服务调用失败", completed_at: new Date().toISOString() }).eq("id", analysisId);
     console.error("[api/analyze] Request failed", networkErrorDetails(caught));
     if (caught instanceof RequestError) return error(caught.message, caught.status);
     return error(caught instanceof SyntaxError ? "模型返回的结果不是有效 JSON，请重试或更换模型。" : "无法连接模型服务，请检查网络后重试。", 502);
+  } finally {
+    if (!completed) {
+      const { error: releaseError } = await supabase.rpc("release_analysis_quota", { p_usage_period_id: usagePeriodId });
+      if (releaseError) console.error("[api/analyze] Quota release failed", releaseError.code);
+    }
   }
 }

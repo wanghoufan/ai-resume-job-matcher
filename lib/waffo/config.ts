@@ -3,8 +3,8 @@ import { Environment, WaffoPancake } from "@waffo/pancake-ts";
 export type PaidPlanCode = "pro_monthly" | "pro_yearly";
 
 export const paidPlans: Record<PaidPlanCode, { name: string; price: string; period: string; productId: string }> = {
-  pro_monthly: { name: "AI 简历生成网站月度会员", price: "US$1.00", period: "月", productId: process.env.WAFFO_MONTHLY_PRODUCT_ID || "PROD_1pA4rw7rPmMk6nn3PzYx2w" },
-  pro_yearly: { name: "AI 简历生成网站年度会员", price: "US$5.00", period: "年", productId: process.env.WAFFO_YEARLY_PRODUCT_ID || "PROD_7asZU0vWjmYVQkpkQlW4Ru" },
+  pro_monthly: { name: "AI 超级求职助手月度会员", price: "US$1.00", period: "月", productId: process.env.WAFFO_MONTHLY_PRODUCT_ID || "PROD_1pA4rw7rPmMk6nn3PzYx2w" },
+  pro_yearly: { name: "AI 超级求职助手年度会员", price: "US$5.00", period: "年", productId: process.env.WAFFO_YEARLY_PRODUCT_ID || "PROD_7asZU0vWjmYVQkpkQlW4Ru" },
 };
 
 export const waffoStoreId = process.env.WAFFO_STORE_ID || "STO_5zYSX8m9K88QBtKYWXaiy8";

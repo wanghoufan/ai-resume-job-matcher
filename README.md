@@ -1,6 +1,6 @@
-# AI 简历岗位匹配助手
+# AI 超级求职助手
 
-AI 简历岗位匹配助手是一款面向求职准备的工具：既能根据 PDF 简历和岗位描述生成岗位匹配分析，也能把简历内容转成可编辑、可换主题、可公开分享的 HTML 求职主页。
+AI 超级求职助手（对外统一名称；仓库代号「AI 简历岗位匹配助手」）是一款面向求职准备的工具：既能根据 PDF 简历和岗位描述生成岗位匹配分析，也能把简历内容转成可编辑、可换主题、可公开分享的 HTML 求职主页。
 
 ![AI 简历岗位匹配助手首页](public/career-orbit-home.png)
 
@@ -16,6 +16,7 @@ AI 简历岗位匹配助手是一款面向求职准备的工具：既能根据 P
 - 草稿编辑、自动保存、模块排序/隐藏和 4 套主题
 - 发布前逐项确认联系方式，公开页 `/r/{slug}` 无需登录即可访问
 - 发布使用独立公开快照；取消发布后链接立即失效
+- 会员与支付（Waffo Pancake 测试环境）：月度/年度订阅收银台、会员状态与有效期查询、AI 分析按自然月额度预留与退回
 
 ## 技术栈
 
@@ -23,6 +24,7 @@ AI 简历岗位匹配助手是一款面向求职准备的工具：既能根据 P
 - Supabase Auth、Postgres 与私有 Storage
 - `pdfjs-dist` 用于浏览器端 PDF 文本解析
 - DeepSeek / OpenAI Chat Completions 兼容接口
+- Waffo Pancake（测试环境）订阅收银台与 webhook；套餐数值与分析额度由 Supabase `plans`/`subscriptions`/`usage_periods` 表驱动
 
 ## 本地运行
 
@@ -82,10 +84,8 @@ npx tsc --noEmit  # 仅执行 TypeScript 检查
 
 ## 当前状态
 
-截至 2026-08-20：
+截至 2026-08-22（权威发布 / 部署状态矩阵见 `docs/pm/PLAN.md` §7）：
 
-- 在线简历 2.0 已通过 PR #1 合并到 `main`，相关 Supabase 迁移已应用到远程数据库。
-- Vercel Production 部署状态为 Ready；正式入口为 <https://ai-resume-job-matcher-eta.vercel.app/resume-sites/new>。
-- 公网冒烟已验证：首页和创建页返回 200，未登录私有 API 返回 401；未启用的示例 slug 返回 404。
-- 当前发布状态是 `deployed / partial live verified`。仍需完成登录态生成 → 编辑 → 发布 → 未登录访问 → 更新发布 → 取消发布的生产回归。
+- **在线简历 2.0（已发布）**：已通过 PR #1 合并到 `main` 并部署至 Vercel Production；公网冒烟（首页/创建页 200、未登录私有 API 401、未启用 slug 404）已验证。发布状态为 `deployed / partial live verified`，仍待完成登录态生成 → 编辑 → 发布 → 未登录访问 → 更新发布 → 取消发布的完整生产回归。
+- **会员与支付（开发中，未发布）**：Waffo Pancake 收银台与 webhook（`/api/payments/waffo/checkout`、`/api/webhooks/waffo`）、`/pricing` 页面与 `integrate_waffo_subscriptions` 迁移已合并到 `main`；但会员状态读取接口 `/api/membership`、分析额度预留（修改 `app/api/analyze/route.ts`）及 3 个额度生命周期迁移仍在本地工作区、尚未提交部署，生产验收为 pending。当前 Bug 见 `docs/qa/BUGS.md`（BUG-001~006）。
 - 正式产品仍需补充速率限制、隐私告知、Google OAuth/邮件发送配置复核和完整 RLS/Storage 安全审查。
