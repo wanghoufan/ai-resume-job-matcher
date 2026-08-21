@@ -3,7 +3,7 @@ import "./globals.css";
 import "./byok.css";
 
 export const metadata: Metadata = {
-  title: "AI 简历岗位匹配助手",
+  title: "AI 超级求职助手",
   description: "让每一份简历更接近理想岗位。",
 };
 
