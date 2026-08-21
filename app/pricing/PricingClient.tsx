@@ -12,7 +12,7 @@ type Membership = {
 
 const plans: Array<{ code: PaidPlanCode; name: string; price: string; suffix: string; note: string }> = [
   { code: "pro_monthly", name: "月度会员", price: "US$1", suffix: "/月", note: "每自然月 300 次 AI 分析额度。" },
-  { code: "pro_yearly", name: "年度会员", price: "US$5", suffix: "/年", note: "每自然月 4000 次 AI 分析额度。" },
+  { code: "pro_yearly", name: "年度会员", price: "US$5", suffix: "/年", note: "每自然月 500 次 AI 分析额度。" },
 ];
 const statusLabels: Record<string, string> = { trialing: "试用中", active: "已生效", past_due: "付款逾期", canceled: "已取消", expired: "已到期" };
 
@@ -87,7 +87,7 @@ export function PricingClient() {
     {membership && <section className={`membership-status ${membership.subscription.isMember ? "is-member" : ""}`}>
       <div><span>当前套餐</span><strong>{membership.subscription.planName}</strong></div>
       <div><span>会员状态</span><strong>{syncing ? "同步中" : statusLabels[membership.subscription.status] || membership.subscription.status}</strong></div>
-      <div><span>本期分析额度（每自然月重置）</span><strong>{membership.quota.remaining} / {membership.quota.analysisLimit}</strong></div>
+      <div><span>剩余 / 总额度（每自然月重置）</span><strong>{membership.quota.remaining} / {membership.quota.analysisLimit}</strong></div>
       {membership.subscription.currentPeriodEnd && <div><span>有效期至</span><strong>{new Date(membership.subscription.currentPeriodEnd).toLocaleDateString("zh-CN")}</strong></div>}
     </section>}
     <section className="pricing-grid">{plans.map((plan) => <article className="price-card" key={plan.code}><div><span>{plan.name}</span><strong>{plan.price}<small>{plan.suffix}</small></strong><p>{plan.note}</p></div><button disabled={!ready || loading !== null || syncing} onClick={() => checkout(plan.code)}>{loading === plan.code ? "正在创建订单…" : user ? "立即付款" : "登录后立即付款"}</button></article>)}</section>
